@@ -46,6 +46,12 @@ def coding_editor():
     return render_template("coding_editor.html")
 
 
+# Coding Assessment Page
+@app.route("/coding_assessment")
+def coding_assessment():
+    return render_template("coding_editor.html")
+
+
 @app.route("/video_interview")
 def video_interview():
     return render_template("video_interview.html")
