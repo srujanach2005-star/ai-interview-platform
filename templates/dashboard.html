@@ -8,7 +8,7 @@
 
 <title>SSB Training And Placement Pvt Ltd</title>
 
-<link rel="icon" href="media/logo.jpeg">
+<link rel="icon" href="{{ url_for('static', filename='media/logo.jpeg') }}">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -166,7 +166,7 @@ width:100%;
 
 <a class="navbar-brand d-flex align-items-center">
 
-<img src="media/logo.jpeg" class="logo">
+<img src="{{ url_for('static', filename='media/logo.jpeg') }}" class="logo">
 
 <b>SSB Training And Placement Pvt Ltd</b>
 
@@ -188,17 +188,17 @@ width:100%;
 
 <h5 class="text-center">👨‍💻 Candidate Panel</h5>
 
-<a class="active" href="dashboard.html">🏠 Dashboard</a>
+<a class="active" href="/dashboard">🏠 Dashboard</a>
 
-<a href="coding_editor.html">💻 Coding Assessment</a>
+<a href="/coding_editor">💻 Coding Assessment</a>
 
-<a href="video_interview.html">🤖 AI Interview</a>
+<a href="/video_interview">🤖 AI Interview</a>
 
-<a href="Performance.html">📊 Performance</a>
+<a href="/performance">📊 Performance</a>
 
-<a href="Profile.html">👤 Profile</a>
+<a href="/profile">👤 Profile</a>
 
-<a href="login.html">🚪 Logout</a>
+<a href="/">🚪 Logout</a>
 
 </div>
 
@@ -226,7 +226,7 @@ width:100%;
 Solve programming problems to evaluate your technical skills.
 </p>
 
-<a href="coding_editor.html" class="btn btn-dashboard">
+<a href="/coding_editor" class="btn btn-dashboard">
 Start Test
 </a>
 
@@ -248,7 +248,7 @@ Start Test
 AI-powered interview analyzing communication and problem solving.
 </p>
 
-<a href="video_interview.html" class="btn btn-dashboard">
+<a href="/video_interview" class="btn btn-dashboard">
 Start Interview
 </a>
 
@@ -270,7 +270,7 @@ Start Interview
 Track your coding score and interview evaluation results.
 </p>
 
-<a href="Performance.html" class="btn btn-dashboard">
+<a href="/performance" class="btn btn-dashboard">
 View Results
 </a>
 

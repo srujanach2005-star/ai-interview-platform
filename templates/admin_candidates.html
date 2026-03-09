@@ -150,17 +150,17 @@ width:100%;
 
 <div class="col-md-4">
 <label>Name</label>
-<input id="name" class="form-control">
+<input id="name" class="form-control" required>
 </div>
 
 <div class="col-md-4">
 <label>Email</label>
-<input id="email" class="form-control">
+<input id="email" class="form-control" required>
 </div>
 
 <div class="col-md-4">
 <label>Password</label>
-<input id="password" class="form-control">
+<input id="password" class="form-control" required>
 </div>
 
 </div>
@@ -220,6 +220,11 @@ function addCandidate(){
 let name=document.getElementById("name").value
 let email=document.getElementById("email").value
 let password=document.getElementById("password").value
+
+if(name=="" || email=="" || password==""){
+alert("Please fill all fields")
+return
+}
 
 fetch("/register",{
 method:"POST",
