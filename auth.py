@@ -49,8 +49,12 @@ def login_user(data):
 
     user_id, hashed, role = user
 
+    # Ensure hashed password is bytes
+    if isinstance(hashed, str):
+        hashed = hashed.encode()
+
     if bcrypt.checkpw(password.encode(), hashed):
         token = create_access_token(identity={"id": user_id, "role": role})
-        return jsonify({"msg": "Login success", "token": token})
+        return jsonify({"msg": "Login success", "token": token, "role": role})
 
     return jsonify({"error": "Invalid password"}), 401
