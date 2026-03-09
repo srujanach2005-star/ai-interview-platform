@@ -63,25 +63,68 @@ def results():
 
 
 # ===============================
-# ADMIN PANEL ROUTES (ADDED)
+# ADMIN PANEL ROUTES
 # ===============================
 
-# Admin Dashboard
 @app.route("/admin_dashboard")
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    # total candidates
+    cur.execute("SELECT COUNT(*) FROM users WHERE role='candidate'")
+    total_candidates = cur.fetchone()[0]
+
+    # coding tests attempted
+    cur.execute("SELECT COUNT(*) FROM submissions")
+    coding_tests = cur.fetchone()[0]
+
+    # ai interviews attended
+    cur.execute("SELECT COUNT(*) FROM interviews")
+    ai_interviews = cur.fetchone()[0]
+
+    # selected candidates
+    cur.execute("SELECT COUNT(*) FROM interviews WHERE status='Selected'")
+    selected_candidates = cur.fetchone()[0]
+
+    # recent candidates
+    cur.execute("""
+    SELECT 
+        users.name,
+        users.email,
+        COALESCE(submissions.score,0),
+        COALESCE(interviews.score,0),
+        COALESCE(interviews.status,'Pending')
+    FROM users
+    LEFT JOIN submissions ON users.id=submissions.user_id
+    LEFT JOIN interviews ON users.id=interviews.candidate_id
+    WHERE users.role='candidate'
+    ORDER BY users.id DESC LIMIT 5
+    """)
+
+    candidates = cur.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_dashboard.html",
+        total_candidates=total_candidates,
+        coding_tests=coding_tests,
+        ai_interviews=ai_interviews,
+        selected_candidates=selected_candidates,
+        candidates=candidates
+    )
 
 
 # View Candidates
 @app.route("/admin_candidates")
 def admin_candidates():
 
-    import sqlite3
-
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("SELECT name,email FROM users WHERE role='candidate'")
+    cur.execute("SELECT id,name,email FROM users WHERE role='candidate'")
     candidates = cur.fetchall()
 
     conn.close()

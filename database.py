@@ -18,14 +18,15 @@ def init_db():
 
     # INTERVIEWS TABLE
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS interviews(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        candidate_id INTEGER,
-        score INTEGER,
-        feedback TEXT,
-        recording TEXT
-    )
-    """)
+CREATE TABLE IF NOT EXISTS interviews(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id INTEGER,
+    score INTEGER,
+    feedback TEXT,
+    recording TEXT,
+    status TEXT DEFAULT 'Pending'
+)
+""")
 
     # PROBLEMS TABLE
     cur.execute("""

@@ -181,7 +181,7 @@ width:100%;
 <div class="col-md-3">
 <div class="stat-card">
 <i class="fa fa-users stat-icon"></i>
-<h3 class="mt-2">120</h3>
+<h3 class="mt-2">{{ total_candidates or 0 }}</h3>
 <p>Total Candidates</p>
 </div>
 </div>
@@ -189,7 +189,7 @@ width:100%;
 <div class="col-md-3">
 <div class="stat-card">
 <i class="fa fa-code stat-icon"></i>
-<h3 class="mt-2">95</h3>
+<h3 class="mt-2">{{ coding_tests or 0 }}</h3>
 <p>Coding Tests</p>
 </div>
 </div>
@@ -197,7 +197,7 @@ width:100%;
 <div class="col-md-3">
 <div class="stat-card">
 <i class="fa fa-robot stat-icon"></i>
-<h3 class="mt-2">80</h3>
+<h3 class="mt-2">{{ ai_interviews or 0 }}</h3>
 <p>AI Interviews</p>
 </div>
 </div>
@@ -205,7 +205,7 @@ width:100%;
 <div class="col-md-3">
 <div class="stat-card">
 <i class="fa fa-user-check stat-icon"></i>
-<h3 class="mt-2">25</h3>
+<h3 class="mt-2">{{ selected_candidates or 0 }}</h3>
 <p>Selected Candidates</p>
 </div>
 </div>
@@ -234,29 +234,29 @@ width:100%;
 
 <tbody>
 
-<tr>
-<td>John Doe</td>
-<td>john@email.com</td>
-<td>85%</td>
-<td>78%</td>
-<td><span class="badge bg-success">Selected</span></td>
-</tr>
+{% for c in candidates %}
 
 <tr>
-<td>Alice</td>
-<td>alice@email.com</td>
-<td>72%</td>
-<td>69%</td>
-<td><span class="badge bg-warning">Pending</span></td>
+<td>{{ c[0] }}</td>
+<td>{{ c[1] }}</td>
+<td>{{ c[2] }}</td>
+<td>{{ c[3] }}</td>
+<td>
+<span class="badge 
+{% if c[4]=='Selected' %}
+bg-success
+{% elif c[4]=='Pending' %}
+bg-warning
+{% else %}
+bg-danger
+{% endif %}
+">
+{{ c[4] }}
+</span>
+</td>
 </tr>
 
-<tr>
-<td>Rahul</td>
-<td>rahul@email.com</td>
-<td>90%</td>
-<td>88%</td>
-<td><span class="badge bg-success">Selected</span></td>
-</tr>
+{% endfor %}
 
 </tbody>
 
