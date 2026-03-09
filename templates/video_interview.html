@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AI Interview</title>
+
+<link rel="icon" href="media/logo.jpeg">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+min-height:100vh;
+}
+
+/* NAVBAR */
+
+.navbar{
+background:rgba(0,0,0,0.6);
+}
+
+.logo{
+height:40px;
+margin-right:10px;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+min-height:100vh;
+background:rgba(0,0,0,0.5);
+padding-top:25px;
+}
+
+.sidebar a{
+display:block;
+color:white;
+padding:12px 20px;
+text-decoration:none;
+border-radius:6px;
+margin:6px 10px;
+transition:0.3s;
+}
+
+.sidebar a:hover{
+background:rgba(255,255,255,0.2);
+transform:translateX(6px);
+}
+
+.sidebar a.active{
+background:rgba(255,255,255,0.2);
+border-left:4px solid #38BDF8;
+}
+
+/* PARTICLES */
+
+#particles-js{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:0;
+}
+
+/* MAIN */
+
+.main-area{
+position:relative;
+z-index:1;
+}
+
+/* INTERVIEW CARD */
+
+.card{
+border:none;
+border-radius:15px;
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
+color:black;
+}
+
+/* VIDEO */
+
+video{
+width:100%;
+border-radius:10px;
+background:black;
+}
+
+/* QUESTION */
+
+.question{
+font-size:18px;
+font-weight:bold;
+margin-top:10px;
+}
+
+/* TIMER */
+
+.timer{
+font-weight:bold;
+color:red;
+}
+
+/* FOOTER */
+
+.footer{
+text-align:center;
+padding:10px;
+background:rgba(0,0,0,0.6);
+color:white;
+position:fixed;
+bottom:0;
+width:100%;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar navbar-dark">
+
+<div class="container-fluid">
+
+<a class="navbar-brand d-flex align-items-center">
+
+<img src="media/logo.jpeg" class="logo">
+
+<b>SSB Training And Placement Pvt Ltd</b>
+
+</a>
+
+</div>
+
+</nav>
+
+<div class="container-fluid">
+
+<div class="row">
+
+<!-- SIDEBAR -->
+
+<div class="col-md-2 sidebar">
+
+<h5 class="text-center">👨‍💻 Candidate Panel</h5>
+
+<a href="dashboard.html">🏠 Dashboard</a>
+
+<a href="coding_editor.html">💻 Coding Assessment</a>
+
+<a class="active" href="video_interview.html">🤖 AI Interview</a>
+
+<a href="Performance.html">📊 Performance</a>
+
+<a href="profile.html">👤 Profile</a>
+
+<a href="login.html">🚪 Logout</a>
+
+</div>
+
+<!-- MAIN -->
+
+<div class="col-md-10 p-4 main-area">
+
+<div id="particles-js"></div>
+
+<h2 class="mb-4">🤖 AI Interview</h2>
+
+<div class="card p-4">
+
+<div class="row">
+
+<div class="col-md-6">
+
+<video id="video" autoplay muted></video>
+
+</div>
+
+<div class="col-md-6">
+
+<h5>Interview Question</h5>
+
+<p class="question" id="question">
+Click Start Interview
+</p>
+
+<p class="timer">
+⏱ Time Left: <span id="time">60</span>s
+</p>
+
+<button class="btn btn-primary" onclick="startInterview()">
+Start Interview
+</button>
+
+<hr>
+
+<h6>Your Answer (Speech-to-Text)</h6>
+
+<p id="speechText"></p>
+
+<h6>Score</h6>
+
+<p id="score">0</p>
+
+<p id="warning" style="color:red;"></p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* PARTICLES */
+
+particlesJS("particles-js",{
+
+particles:{
+number:{value:70},
+color:{value:"#ffffff"},
+shape:{type:"circle"},
+opacity:{value:0.4},
+size:{value:3},
+line_linked:{
+enable:true,
+distance:150,
+color:"#ffffff",
+opacity:0.3,
+width:1
+},
+move:{enable:true,speed:2}
+}
+
+});
+
+/* CAMERA */
+
+navigator.mediaDevices.getUserMedia({video:true,audio:true})
+
+.then(stream=>{
+document.getElementById("video").srcObject=stream;
+});
+
+/* QUESTIONS */
+
+const questions=[
+
+"Tell me about yourself.",
+
+"What are your strengths?",
+
+"Explain a challenging project you worked on.",
+
+"Why should we select you for this internship?"
+
+];
+
+let index=0;
+
+/* SPEECH RECOGNITION */
+
+let recognition;
+
+function startSpeech(){
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+recognition = new SpeechRecognition();
+
+recognition.continuous=true;
+
+recognition.onresult=function(event){
+
+let text=event.results[event.results.length-1][0].transcript;
+
+document.getElementById("speechText").innerText=text;
+
+updateScore(text);
+
+};
+
+recognition.start();
+
+}
+
+/* SCORE */
+
+function updateScore(answer){
+
+let score=document.getElementById("score");
+
+if(answer.length>20){
+
+score.innerText=parseInt(score.innerText)+10;
+
+}
+
+}
+
+/* INTERVIEW */
+
+function startInterview(){
+
+startSpeech();
+
+askQuestion();
+
+startTimer();
+
+}
+
+function askQuestion(){
+
+if(index<questions.length){
+
+document.getElementById("question").innerText=questions[index];
+
+index++;
+
+setTimeout(askQuestion,20000);
+
+}else{
+
+document.getElementById("question").innerText="Interview Completed";
+
+}
+
+}
+
+/* TIMER */
+
+let time=60;
+
+function startTimer(){
+
+let t=setInterval(function(){
+
+time--;
+
+document.getElementById("time").innerText=time;
+
+if(time<=0){
+
+clearInterval(t);
+
+document.getElementById("question").innerText="Time Over";
+
+}
+
+},1000);
+
+}
+
+/* CHEATING DETECTION */
+
+document.addEventListener("visibilitychange",function(){
+
+if(document.hidden){
+
+document.getElementById("warning").innerText=
+"⚠ Do not switch tabs during interview.";
+
+}
+
+});
+
+</script>
+
+<footer class="footer">
+© 2026 SSB Training And Placement Pvt Ltd
+</footer>
+
+</body>
+
+</html>
