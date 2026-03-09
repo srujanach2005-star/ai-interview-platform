@@ -24,8 +24,6 @@ background:linear-gradient(135deg,#1e3c72,#2a5298);
 color:white;
 }
 
-/* PARTICLES */
-
 #particles-js{
 position:fixed;
 top:0;
@@ -35,8 +33,6 @@ height:100%;
 z-index:0;
 }
 
-/* NAVBAR */
-
 .navbar{
 background:rgba(0,0,0,0.6);
 }
@@ -45,8 +41,6 @@ background:rgba(0,0,0,0.6);
 height:40px;
 margin-right:10px;
 }
-
-/* SIDEBAR */
 
 .sidebar{
 min-height:100vh;
@@ -76,15 +70,11 @@ background:rgba(255,255,255,0.2);
 border-left:4px solid #38BDF8;
 }
 
-/* MAIN */
-
 .main-area{
 position:relative;
 z-index:1;
 padding:30px;
 }
-
-/* CARD */
 
 .card-box{
 background:white;
@@ -94,8 +84,6 @@ padding:20px;
 box-shadow:0 8px 25px rgba(0,0,0,0.3);
 margin-bottom:20px;
 }
-
-/* FOOTER */
 
 .footer{
 text-align:center;
@@ -113,8 +101,6 @@ width:100%;
 <body>
 
 <div id="particles-js"></div>
-
-<!-- NAVBAR -->
 
 <nav class="navbar navbar-dark">
 
@@ -136,8 +122,6 @@ width:100%;
 
 <div class="row">
 
-<!-- SIDEBAR -->
-
 <div class="col-md-2 sidebar">
 
 <h5 class="text-center">⚙ Admin Panel</h5>
@@ -154,13 +138,9 @@ width:100%;
 
 </div>
 
-<!-- MAIN -->
-
 <div class="col-md-10 main-area">
 
 <h2 class="mb-4">Candidates Management</h2>
-
-<!-- ADD CANDIDATE -->
 
 <div class="card-box">
 
@@ -191,8 +171,6 @@ width:100%;
 
 </div>
 
-<!-- CANDIDATE TABLE -->
-
 <div class="card-box">
 
 <h4>Candidate List</h4>
@@ -202,17 +180,26 @@ width:100%;
 <thead>
 
 <tr>
-
 <th>Name</th>
 <th>Email</th>
 <th>Password</th>
 <th>Status</th>
-
 </tr>
 
 </thead>
 
-<tbody id="candidateTable">
+<tbody>
+
+{% for c in candidates %}
+
+<tr>
+<td>{{ c[0] }}</td>
+<td>{{ c[1] }}</td>
+<td>******</td>
+<td><span class="badge bg-success">Active</span></td>
+</tr>
+
+{% endfor %}
 
 </tbody>
 
@@ -228,34 +215,38 @@ width:100%;
 
 <script>
 
-/* ADD CANDIDATE */
-
 function addCandidate(){
 
 let name=document.getElementById("name").value
 let email=document.getElementById("email").value
 let password=document.getElementById("password").value
 
-let table=document.getElementById("candidateTable")
+fetch("/register",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+name:name,
+email:email,
+password:password,
+role:"candidate"
+})
+})
 
-let row=`
-<tr>
-<td>${name}</td>
-<td>${email}</td>
-<td>${password}</td>
-<td><span class="badge bg-success">Active</span></td>
-</tr>
-`
+.then(res=>res.json())
 
-table.innerHTML+=row
+.then(data=>{
+alert("Candidate Created Successfully")
+location.reload()
+})
 
-document.getElementById("name").value=""
-document.getElementById("email").value=""
-document.getElementById("password").value=""
+.catch(error=>{
+console.error(error)
+alert("Error creating candidate")
+})
 
 }
-
-/* PARTICLES */
 
 particlesJS("particles-js",{
 
@@ -287,5 +278,4 @@ speed:2
 </footer>
 
 </body>
-
 </html>

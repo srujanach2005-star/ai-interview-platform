@@ -70,15 +70,17 @@ def admin_dashboard():
 @app.route("/admin_candidates")
 def admin_candidates():
 
+    import sqlite3
+
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM users WHERE role='user'")
-    users = cur.fetchall()
+    cur.execute("SELECT name,email FROM users WHERE role='candidate'")
+    candidates = cur.fetchall()
 
     conn.close()
 
-    return render_template("admin_candidates.html", users=users)
+    return render_template("admin_candidates.html", candidates=candidates)
 
 
 # Delete User
