@@ -182,23 +182,49 @@ width:100%;
 <thead>
 
 <tr>
+<th>ID</th>
 <th>Name</th>
 <th>Email</th>
-<th>Password</th>
-<th>Status</th>
+<th>Role</th>
+<th>Update Role</th>
+<th>Delete</th>
 </tr>
 
 </thead>
 
 <tbody>
-
 {% for c in candidates %}
-
 <tr>
+
 <td>{{ c[0] }}</td>
 <td>{{ c[1] }}</td>
-<td>******</td>
-<td><span class="badge bg-success">Active</span></td>
+<td>{{ c[2] }}</td>
+
+<td>
+
+<select id="role{{c[0]}}" class="form-control">
+
+<option value="candidate" {% if c[3]=='candidate' %}selected{% endif %}>
+Candidate
+</option>
+
+<option value="admin" {% if c[3]=='admin' %}selected{% endif %}>
+Admin
+</option>
+
+</select>
+
+</td>
+
+<td>
+<button class="btn btn-primary btn-sm" onclick="updateRole({{c[0]}})">Update</button>
+</td>
+
+<td>
+<a href="/delete_user/{{c[0]}}" class="btn btn-danger btn-sm"
+onclick="return confirm('Delete this user?')">Delete</a>
+</td>
+
 </tr>
 
 {% endfor %}
@@ -277,6 +303,30 @@ speed:2
 }
 
 })
+
+
+function updateRole(userId){
+
+let role = document.getElementById("role"+userId).value
+
+fetch("/update_role/"+userId,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+role:role
+})
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+alert(data.message)
+})
+
+}
+
 
 </script>
 

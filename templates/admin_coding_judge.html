@@ -168,74 +168,57 @@ width:100%;
 
 <div class="col-md-6 mb-3">
 <label>Problem Title</label>
-<input class="form-control">
+<input id="title" class="form-control">
 </div>
 
 <div class="col-md-6 mb-3">
 <label>Difficulty</label>
-<select class="form-control">
+<select id="difficulty" class="form-control">
 <option>Easy</option>
 <option>Medium</option>
 <option>Hard</option>
 </select>
 </div>
 
+<div class="col-md-6 mb-3">
+<label>Number of Inputs</label>
+
+<select id="numInputs" class="form-control" onchange="generateInputs()">
+<option value="1">1 Input</option>
+<option value="2">2 Inputs</option>
+<option value="3">3 Inputs</option>
+<option value="4">4 Inputs</option>
+</select>
+
+</div>
+
 <div class="col-md-12 mb-3">
 <label>Description</label>
-<textarea class="form-control" rows="3"></textarea>
-</div>
-
-</div>
-
-</div>
-
-<div class="card-box">
-
-<h4>Code Editor</h4>
-
-<div id="editor"></div>
-
+<textarea id="description" class="form-control" rows="3"></textarea>
 <br>
+<button class="btn btn-primary" onclick="addProblem()">
+Add Problem
+</button>
+</div>
 
-<button class="btn btn-success" onclick="runCode()">Run Code</button>
+</div>
 
+</div>
+<div class="card-box">
+<h4>Hidden Test Cases</h4>
+<div id="testcase-container"></div>
 </div>
 
 <div class="card-box">
-
-<h4>Test Cases</h4>
-
-<div class="row">
-
-<div class="col-md-6">
-
-<label>Input</label>
-
-<textarea id="input" class="form-control">2 7 11 15
-9</textarea>
-
-</div>
-
-<div class="col-md-6">
-
-<label>Expected Output</label>
-
-<textarea id="expected" class="form-control">0 1</textarea>
-
-</div>
-
-</div>
-
+<h4>Code Editor</h4>
+<div id="editor"></div>
 </div>
 
 <div class="card-box">
-
 <h4>Judge Result</h4>
-
 <div id="result" class="result">
 Waiting for execution...
 </div>
-
 </div>
 
 </div>
@@ -303,6 +286,93 @@ speed:2
 }
 
 });
+
+function addProblem(){
+
+let data = {
+title:document.getElementById("title").value,
+description:document.getElementById("description").value
+}
+
+for(let i=1;i<=5;i++){
+
+let inputValues = []
+let numInputs = parseInt(document.getElementById("numInputs").value)
+
+for(let j=1;j<=numInputs;j++){
+
+let el = document.getElementById(`tc${i}_input${j}`)
+
+if(el){
+inputValues.push(el.value)
+}
+
+}
+
+data[`input${i}`] = inputValues.join(" ")
+data[`output${i}`] = document.getElementById(`tc${i}_output`).value
+
+}
+
+fetch("/add_problem",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(data)
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+alert("Problem Added Successfully")
+
+document.getElementById("title").value=""
+document.getElementById("description").value=""
+
+generateInputs()
+
+})
+
+}
+
+
+function generateInputs(){
+
+let num = document.getElementById("numInputs").value
+
+let container = document.getElementById("testcase-container")
+
+container.innerHTML=""
+
+for(let i=1;i<=5;i++){
+
+let html = `<h6>Test Case ${i}</h6>`
+
+for(let j=1;j<=num;j++){
+
+html += `<input class="form-control mb-2"
+placeholder="Input ${j}" id="tc${i}_input${j}">`
+
+}
+
+html += `<input class="form-control mb-3"
+placeholder="Expected Output" id="tc${i}_output">`
+
+container.innerHTML += html
+
+
+
+
+}
+
+}
+generateInputs()
 
 </script>
 

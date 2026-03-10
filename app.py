@@ -3,6 +3,13 @@ from flask_jwt_extended import JWTManager
 from auth import register_user, login_user
 from database import init_db
 import sqlite3
+import random
+import subprocess
+import tempfile
+from flask import redirect
+
+
+
 
 app = Flask(__name__)
 
@@ -44,6 +51,31 @@ def dashboard():
 @app.route("/coding_editor")
 def coding_editor():
     return render_template("coding_editor.html")
+
+
+
+# get_random_promblem
+@app.route("/get_random_problem")
+def get_random_problem():
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, title, description FROM problems")
+    problems = cur.fetchall()
+
+    conn.close()
+
+    if not problems:
+        return jsonify({"error": "No problems found"})
+
+    problem = random.choice(problems)
+
+    return jsonify({
+        "id": problem[0],
+        "title": problem[1],
+        "description": problem[2]
+    })
 
 
 # Coding Assessment Page
@@ -124,7 +156,8 @@ def admin_candidates():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("SELECT id,name,email FROM users WHERE role='candidate'")
+    # show all users with roles
+    cur.execute("SELECT id,name,email,role FROM users")
     candidates = cur.fetchall()
 
     conn.close()
@@ -143,51 +176,102 @@ def delete_user(user_id):
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "User deleted"})
+    return redirect("/admin_candidates")
 
+# role updated
+@app.route("/update_role/<int:user_id>", methods=["POST"])
+def update_role(user_id):
+
+    data = request.json
+    role = data["role"]
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Role Updated Successfully"})
 
 # Coding Judge Admin Page
 @app.route("/admin_coding_judge")
 def admin_coding_judge():
     return render_template("admin_coding_judge.html")
 
-
-# Add Problem
 @app.route("/add_problem", methods=["POST"])
 def add_problem():
 
     data = request.json
 
-    title = data.get("title")
-    description = data.get("description")
-
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
+    # insert problem
     cur.execute(
         "INSERT INTO problems (title, description) VALUES (?, ?)",
-        (title, description)
+        (data["title"], data["description"])
+    )
+
+    problem_id = cur.lastrowid
+
+    # insert 5 hidden testcases
+    testcases = [
+        (problem_id, data["input1"], data["output1"]),
+        (problem_id, data["input2"], data["output2"]),
+        (problem_id, data["input3"], data["output3"]),
+        (problem_id, data["input4"], data["output4"]),
+        (problem_id, data["input5"], data["output5"])
+    ]
+
+    cur.executemany(
+        "INSERT INTO testcases (problem_id, input, output) VALUES (?, ?, ?)",
+        testcases
     )
 
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "Problem added successfully"})
+    return jsonify({"msg": "Problem added successfully"})
 
 
+
+
+
+# add problemstosee
+
+@app.route("/admin_problems")
+def admin_problems():
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, title, description FROM problems")
+    problems = cur.fetchall()
+
+    conn.close()
+
+    return render_template("admin_problems.html", problems=problems)
 # Delete Problem
+  # add this at the top if not already
+
 @app.route("/delete_problem/<int:problem_id>")
 def delete_problem(problem_id):
 
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
+    # delete testcases first (important)
+    cur.execute("DELETE FROM testcases WHERE problem_id=?", (problem_id,))
+    
+    # delete problem
     cur.execute("DELETE FROM problems WHERE id=?", (problem_id,))
+
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "Problem deleted"})
-
+    return redirect("/admin_problems")
 
 # Admin AI Interviews Page
 @app.route("/admin_ai_interviews")
@@ -206,9 +290,119 @@ def admin_results():
     results = cur.fetchall()
 
     conn.close()
-
     return render_template("admin_results.html", results=results)
 
+
+
+
+# run_code
+@app.route("/run_code", methods=["POST"])
+def run_code():
+
+    data = request.json
+    code = data["code"]
+    problem_id = data["problem_id"]
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    # take only first testcase for RUN
+    cur.execute(
+        "SELECT input, output FROM testcases WHERE problem_id=? LIMIT 1",
+        (problem_id,)
+    )
+    testcase = cur.fetchone()
+
+    conn.close()
+
+    inp, expected = testcase
+
+    try:
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as f:
+            f.write(code.encode())
+            filename = f.name
+
+        process = subprocess.run(
+            ["python", filename],
+            input=inp,
+            text=True,
+            capture_output=True,
+            timeout=5
+        )
+
+        # 🔴 SHOW ERRORS IF EXIST
+        if process.stderr:
+            return jsonify({"console": process.stderr})
+
+        # ✅ NORMAL OUTPUT
+        output = process.stdout.strip()
+
+        console = f"""Input: {inp}
+Expected: {expected}
+Your Output: {output}
+"""
+
+        return jsonify({"console": console})
+
+    except Exception as e:
+        return jsonify({"console": str(e)})
+    
+
+
+
+
+
+    # sumbit_code
+@app.route("/submit_code", methods=["POST"])
+def submit_code():
+
+    data = request.json
+    code = data["code"]
+    problem_id = data["problem_id"]
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("SELECT input, output FROM testcases WHERE problem_id=?", (problem_id,))
+    testcases = cur.fetchall()
+
+    conn.close()
+
+    score = 0
+    results = []   # ⭐ THIS WAS MISSING
+
+    for inp, expected in testcases:
+
+        try:
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as f:
+                f.write(code.encode())
+                filename = f.name
+
+            process = subprocess.run(
+                ["python", filename],
+                input=inp,
+                text=True,
+                capture_output=True,
+                timeout=3
+            )
+
+            output = process.stdout.strip()
+
+            if output == expected:
+                score += 1
+                results.append("PASS")
+            else:
+                results.append("FAIL")
+
+        except:
+            results.append("FAIL")
+
+    return jsonify({
+        "score": score,
+        "results": results
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -106,10 +106,10 @@ border-top:1px solid #ddd;
 }
 
 .testcase-row{
-display:flex;
-gap:15px;
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:10px;
 }
-
 .testcase-box{
 flex:1;
 background:white;
@@ -122,7 +122,6 @@ align-items:center;
 }
 
 /* PASS FAIL */
-
 .pass{
 color:green;
 font-weight:bold;
@@ -132,7 +131,6 @@ font-weight:bold;
 color:red;
 font-weight:bold;
 }
-
 /* OUTPUT */
 
 .output{
@@ -207,7 +205,7 @@ font-size:14px;
 </select>
 
 <button class="btn btn-success btn-sm ms-2" onclick="runCode()">Run</button>
-<button class="btn btn-primary btn-sm">Submit</button>
+<button class="btn btn-primary btn-sm" onclick="submitCode()">Submit</button>
 
 </div>
 
@@ -245,17 +243,10 @@ Solutions
 
 <div class="tab-pane fade show active" id="desc">
 
-<h4>Two Sum</h4>
+<h4 id="problem-title"></h4>
 
-<p>
-Given an array of integers nums and target,
-return indices of two numbers that add up to target.
-</p>
+<p id="problem-description"></p>
 
-<pre>
-Input: nums = [2,7,11,15], target = 9
-Output: [0,1]
-</pre>
 
 </div>
 
@@ -298,6 +289,16 @@ Output: [0,1]
 <span id="t3"></span>
 </div>
 
+<div class="testcase-box">
+<b>Test Case 4</b>
+<span id="t4"></span>
+</div>
+
+<div class="testcase-box">
+<b>Test Case 5</b>
+<span id="t5"></span>
+</div>
+
 </div>
 
 </div>
@@ -315,10 +316,21 @@ Console Output...
 <div class="footer">
 © 2026 SSB Training And Placement Pvt Ltd
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+
+/* LOAD RANDOM PROBLEM */
+fetch("/get_random_problem")
+.then(res => res.json())
+.then(data => {
+
+window.currentProblem = data.id
+
+document.getElementById("problem-title").innerText = data.title
+document.getElementById("problem-description").innerText = data.description
+
+})
 
 /* MONACO EDITOR */
 
@@ -334,7 +346,7 @@ editor = monaco.editor.create(document.getElementById('editor'),{
 
 value:`# Write your solution here
 
-def twoSum(nums,target):
+def solution():
     pass`,
 
 language:"python",
@@ -344,16 +356,75 @@ automaticLayout:true
 });
 
 });
-
 /* RUN BUTTON */
-
 function runCode(){
 
-document.getElementById("t1").innerHTML="<span class='pass'>PASS</span>";
-document.getElementById("t2").innerHTML="<span class='fail'>FAIL</span>";
-document.getElementById("t3").innerHTML="<span class='pass'>PASS</span>";
+let code = editor.getValue()
 
-document.getElementById("output").innerText="Running code...\nTest cases executed.";
+fetch("/run_code",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+code:code,
+problem_id:window.currentProblem
+})
+})
+
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("output").innerText = data.console
+
+})
+
+}
+
+
+
+// Submitcode
+function submitCode(){
+
+let code = editor.getValue()
+
+fetch("/submit_code",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+code:code,
+problem_id:window.currentProblem
+})
+})
+
+.then(res=>res.json())
+.then(data=>{
+
+let output = "Code Submitted Successfully\n\n"
+
+for(let i=1;i<=5;i++){
+
+let result = data.results[i-1]
+
+let box = document.getElementById("t"+i)
+
+if(result=="PASS"){
+box.innerHTML = "<span class='pass'>PASS</span>"
+}else{
+box.innerHTML = "<span class='fail'>FAIL</span>"
+}
+
+output += "Test Case "+i+" : "+result+"\n"
+
+}
+
+output += "\nTotal Passed: "+data.score+"/5"
+
+document.getElementById("output").innerText = output
+
+})
 
 }
 
