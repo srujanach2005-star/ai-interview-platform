@@ -72,23 +72,18 @@ def admin_dashboard():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    # total candidates
     cur.execute("SELECT COUNT(*) FROM users WHERE role='candidate'")
     total_candidates = cur.fetchone()[0]
 
-    # coding tests attempted
     cur.execute("SELECT COUNT(*) FROM submissions")
     coding_tests = cur.fetchone()[0]
 
-    # ai interviews attended
     cur.execute("SELECT COUNT(*) FROM interviews")
     ai_interviews = cur.fetchone()[0]
 
-    # selected candidates
     cur.execute("SELECT COUNT(*) FROM interviews WHERE status='Selected'")
     selected_candidates = cur.fetchone()[0]
 
-    # recent candidates
     cur.execute("""
     SELECT 
         users.name,
@@ -116,7 +111,8 @@ def admin_dashboard():
         candidates=candidates
     )
 
-# finally reslut 
+
+# finally result
 @app.route("/final_results")
 def final_results():
 
@@ -140,6 +136,7 @@ def final_results():
     conn.close()
 
     return render_template("final_results.html", results=results)
+
 
 # View Candidates
 @app.route("/admin_candidates")
@@ -283,6 +280,72 @@ def admin_results():
     conn.close()
 
     return render_template("admin_results.html", results=results)
+
+
+# Profile page
+@app.route("/profile")
+def profile():
+    return render_template("profile.html")
+
+
+# Save profile
+@app.route("/save_profile", methods=["POST"])
+def save_profile():
+
+    name = request.form.get("name")
+    email = request.form.get("email")
+    phone = request.form.get("phone")
+    college = request.form.get("college")
+    skills = request.form.get("skills")
+
+    user_id = request.form.get("user_id")
+
+    photo = request.files.get("photo")
+    resume = request.files.get("resume")
+
+    photo_filename = None
+    resume_filename = None
+
+    if photo and photo.filename != "":
+        photo_filename = photo.filename
+        photo.save("static/uploads/" + photo_filename)
+
+    if resume and resume.filename != "":
+        resume_filename = resume.filename
+        resume.save("static/resumes/" + resume_filename)
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO profiles(user_id,name,email,phone,college,skills,photo,resume)
+    VALUES(?,?,?,?,?,?,?,?)
+    """,(user_id,name,email,phone,college,skills,photo_filename,resume_filename))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/profile")
+
+# View profile (admin)
+@app.route("/view_profile/<int:user_id>")
+def view_profile(user_id):
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name, users.email, profiles.phone, profiles.college, profiles.skills
+    FROM users
+    JOIN profiles ON users.id = profiles.user_id
+    WHERE users.id=?
+    """,(user_id,))
+
+    profile = cur.fetchone()
+
+    conn.close()
+
+    return render_template("admin_view_profile.html", profile=profile)
 
 
 if __name__ == "__main__":

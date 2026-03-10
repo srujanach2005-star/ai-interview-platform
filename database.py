@@ -59,6 +59,31 @@ def init_db():
         score INTEGER
     )
     """)
+    # save profile
+    cur.execute("""
+CREATE TABLE IF NOT EXISTS profiles(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    phone TEXT,
+    college TEXT,
+    skills TEXT,
+    resume TEXT
+)
+""")
+    # phote
+    cur.execute("""
+CREATE TABLE IF NOT EXISTS profiles(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    name TEXT,
+    email TEXT,
+    phone TEXT,
+    college TEXT,
+    skills TEXT,
+    photo TEXT,
+    resume TEXT
+)
+""")
 
     # CHECK IF ADMIN EXISTS
     cur.execute("SELECT * FROM users WHERE email=?", ("admin@gmail.com",))
