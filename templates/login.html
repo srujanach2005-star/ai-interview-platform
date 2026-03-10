@@ -79,11 +79,10 @@ width:100%;
 </style>
 
 <script>
-
 function login(){
 
-let username=document.getElementById("username").value
-let password=document.getElementById("password").value
+let username = document.getElementById("username").value
+let password = document.getElementById("password").value
 
 fetch("/login",{
 method:"POST",
@@ -104,10 +103,6 @@ console.log(data)
 
 if(data.msg==="Login success"){
 
-alert("Login Successful")
-
-/* SAFE ROLE CHECK */
-
 if(data.role && data.role==="admin"){
 window.location.href="/admin_dashboard"
 }
@@ -116,17 +111,40 @@ window.location.href="/dashboard"
 }
 
 }
-
 else{
-alert("Invalid Credentials")
+
+document.getElementById("login-error").innerText =
+"Invalid username or password";
+
 }
 
 })
 
 .catch(error=>{
 console.error("Error:",error)
-alert("Login failed. Check server or credentials.")
+
+document.getElementById("login-error").innerText =
+"Server error. Please try again.";
+
 })
+
+}
+
+function togglePassword(){
+
+let passwordField = document.getElementById("password")
+let eyeIcon = document.getElementById("eyeIcon")
+
+if(passwordField.type === "password"){
+passwordField.type = "text"
+eyeIcon.classList.remove("fa-eye")
+eyeIcon.classList.add("fa-eye-slash")
+}
+else{
+passwordField.type = "password"
+eyeIcon.classList.remove("fa-eye-slash")
+eyeIcon.classList.add("fa-eye")
+}
 
 }
 
@@ -177,20 +195,23 @@ Complete coding tests and AI interviews to secure your internship opportunity.
 </div>
 
 <div class="input-group mb-3">
+
 <span class="input-group-text">
 <i class="fa fa-lock"></i>
 </span>
+
 <input id="password" type="password" class="form-control" placeholder="Password">
+
+<span class="input-group-text" onclick="togglePassword()" style="cursor:pointer;">
+<i id="eyeIcon" class="fa fa-eye"></i>
+</span>
+
 </div>
+<p id="login-error" style="color:red;text-align:center;"></p>
 
 <button onclick="login()" class="btn btn-login w-100 mb-3">
 Login
 </button>
-
-<div class="text-center mt-2">
-Don't have an account?
-<a href="/register_page"><b>Sign Up</b></a>
-</div>
 
 </div>
 
