@@ -116,6 +116,30 @@ def admin_dashboard():
         candidates=candidates
     )
 
+# finally reslut 
+@app.route("/final_results")
+def final_results():
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name,
+           users.email,
+           COALESCE(submissions.score,0),
+           COALESCE(interviews.score,0),
+           COALESCE(interviews.status,'Pending')
+    FROM users
+    LEFT JOIN submissions ON users.id = submissions.user_id
+    LEFT JOIN interviews ON users.id = interviews.candidate_id
+    WHERE users.role='candidate'
+    """)
+
+    results = cur.fetchall()
+
+    conn.close()
+
+    return render_template("final_results.html", results=results)
 
 # View Candidates
 @app.route("/admin_candidates")
@@ -217,7 +241,21 @@ def delete_problem(problem_id):
 # Admin AI Interviews Page
 @app.route("/admin_ai_interviews")
 def admin_ai_interviews():
-    return render_template("admin_ai_interviews.html")
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name, users.email, interviews.score, interviews.feedback, interviews.recording
+    FROM interviews
+    JOIN users ON interviews.candidate_id = users.id
+    """)
+
+    interviews = cur.fetchall()
+
+    conn.close()
+
+    return render_template("admin_ai_interviews.html", interviews=interviews)
 
 
 # Admin Results Page
@@ -227,7 +265,19 @@ def admin_results():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM interviews")
+    cur.execute("""
+    SELECT users.id,
+           users.name,
+           users.email,
+           COALESCE(submissions.score,0),
+           COALESCE(interviews.score,0),
+           COALESCE(interviews.status,'Pending')
+    FROM users
+    LEFT JOIN submissions ON users.id=submissions.user_id
+    LEFT JOIN interviews ON users.id=interviews.candidate_id
+    WHERE users.role='candidate'
+    """)
+
     results = cur.fetchall()
 
     conn.close()

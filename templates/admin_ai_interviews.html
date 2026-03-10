@@ -184,35 +184,35 @@ width:100%;
 
 <tbody>
 
-<tr>
-<td>Rahul</td>
-<td>rahul@gmail.com</td>
-<td>85%</td>
-<td>80%</td>
-<td>88%</td>
-<td>84%</td>
-<td><button class="btn btn-primary btn-sm">View</button></td>
-</tr>
+{% if interviews %}
+
+{% for i in interviews %}
 
 <tr>
-<td>Alice</td>
-<td>alice@gmail.com</td>
-<td>72%</td>
-<td>70%</td>
-<td>68%</td>
-<td>70%</td>
-<td><button class="btn btn-primary btn-sm">View</button></td>
+
+<td>{{ i[0] }}</td>
+<td>{{ i[1] }}</td>
+
+<td>{{ i[2] }}%</td>
+<td>{{ i[2] }}%</td>
+<td>{{ i[2] }}%</td>
+<td>{{ i[2] }}%</td>
+
+<td>
+<a href="{{ i[4] }}" class="btn btn-primary btn-sm" target="_blank">View</a>
+</td>
+
 </tr>
 
+{% endfor %}
+
+{% else %}
+
 <tr>
-<td>John</td>
-<td>john@gmail.com</td>
-<td>60%</td>
-<td>65%</td>
-<td>62%</td>
-<td>62%</td>
-<td><button class="btn btn-primary btn-sm">View</button></td>
+<td colspan="7" class="text-center">No interviews completed yet</td>
 </tr>
+
+{% endif %}
 
 </tbody>
 
