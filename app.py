@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 from flask_jwt_extended import JWTManager
 from auth import register_user, login_user
 from database import init_db
@@ -132,6 +132,31 @@ def admin_candidates():
     return render_template("admin_candidates.html", candidates=candidates)
 
 
+# Add Candidate
+@app.route("/add_candidate", methods=["POST"])
+def add_candidate():
+
+    name = request.form.get("name")
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    import bcrypt
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
+        (name, email, hashed, "candidate")
+    )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Candidate created"})
+
+
 # Delete User
 @app.route("/delete_user/<int:user_id>")
 def delete_user(user_id):
@@ -143,7 +168,7 @@ def delete_user(user_id):
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "User deleted"})
+    return redirect("/admin_candidates")
 
 
 # Coding Judge Admin Page

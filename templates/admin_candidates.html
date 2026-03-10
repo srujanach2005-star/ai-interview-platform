@@ -186,6 +186,7 @@ width:100%;
 <th>Email</th>
 <th>Password</th>
 <th>Status</th>
+<th>Action</th>
 </tr>
 
 </thead>
@@ -195,10 +196,19 @@ width:100%;
 {% for c in candidates %}
 
 <tr>
-<td>{{ c[0] }}</td>
 <td>{{ c[1] }}</td>
+<td>{{ c[2] }}</td>
 <td>******</td>
 <td><span class="badge bg-success">Active</span></td>
+
+<td>
+<a href="/delete_user/{{c[0]}}" 
+class="btn btn-danger btn-sm"
+onclick="return confirm('Delete this candidate?')">
+Delete
+</a>
+</td>
+
 </tr>
 
 {% endfor %}

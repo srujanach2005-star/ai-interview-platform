@@ -1,6 +1,7 @@
 import sqlite3
 import bcrypt
 
+
 def init_db():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
@@ -9,24 +10,24 @@ def init_db():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT UNIQUE,
-        password BLOB,
-        role TEXT
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password BLOB NOT NULL,
+        role TEXT DEFAULT 'candidate'
     )
     """)
 
     # INTERVIEWS TABLE
     cur.execute("""
-CREATE TABLE IF NOT EXISTS interviews(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    candidate_id INTEGER,
-    score INTEGER,
-    feedback TEXT,
-    recording TEXT,
-    status TEXT DEFAULT 'Pending'
-)
-""")
+    CREATE TABLE IF NOT EXISTS interviews(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        candidate_id INTEGER,
+        score INTEGER,
+        feedback TEXT,
+        recording TEXT,
+        status TEXT DEFAULT 'Pending'
+    )
+    """)
 
     # PROBLEMS TABLE
     cur.execute("""
@@ -59,12 +60,11 @@ CREATE TABLE IF NOT EXISTS interviews(
     )
     """)
 
-    # DEFAULT ADMIN CREATION
+    # CHECK IF ADMIN EXISTS
     cur.execute("SELECT * FROM users WHERE email=?", ("admin@gmail.com",))
     admin = cur.fetchone()
 
     if not admin:
-
         hashed = bcrypt.hashpw("admin123".encode(), bcrypt.gensalt())
 
         cur.execute("""
