@@ -25,8 +25,6 @@ background:linear-gradient(135deg,#1e3c72,#2a5298);
 color:white;
 }
 
-/* PARTICLES */
-
 #particles-js{
 position:fixed;
 top:0;
@@ -36,8 +34,6 @@ height:100%;
 z-index:0;
 }
 
-/* NAVBAR */
-
 .navbar{
 background:rgba(0,0,0,0.6);
 }
@@ -46,8 +42,6 @@ background:rgba(0,0,0,0.6);
 height:40px;
 margin-right:10px;
 }
-
-/* SIDEBAR */
 
 .sidebar{
 min-height:100vh;
@@ -77,15 +71,11 @@ background:rgba(255,255,255,0.2);
 border-left:4px solid #38BDF8;
 }
 
-/* MAIN */
-
 .main-area{
 position:relative;
 z-index:1;
 padding:30px;
 }
-
-/* CARD */
 
 .card-box{
 background:white;
@@ -94,8 +84,6 @@ border-radius:12px;
 padding:20px;
 box-shadow:0 8px 25px rgba(0,0,0,0.3);
 }
-
-/* FOOTER */
 
 .footer{
 text-align:center;
@@ -113,8 +101,6 @@ width:100%;
 <body>
 
 <div id="particles-js"></div>
-
-<!-- NAVBAR -->
 
 <nav class="navbar navbar-dark">
 
@@ -136,8 +122,6 @@ width:100%;
 
 <div class="row">
 
-<!-- SIDEBAR -->
-
 <div class="col-md-2 sidebar">
 
 <h5 class="text-center">⚙ Admin Panel</h5>
@@ -155,8 +139,6 @@ width:100%;
 <a class="active" href="/final_results">🏆 Final Results</a>
 
 </div>
-
-<!-- MAIN -->
 
 <div class="col-md-10 main-area">
 
@@ -184,35 +166,41 @@ width:100%;
 
 <tbody>
 
-<tr>
-<td>1</td>
-<td>Rahul</td>
-<td>rahul@gmail.com</td>
-<td>92%</td>
-<td>88%</td>
-<td>90%</td>
-<td><span class="badge bg-success">Selected</span></td>
-</tr>
+{% if results %}
+
+{% for r in results %}
 
 <tr>
-<td>2</td>
-<td>Alice</td>
-<td>alice@gmail.com</td>
-<td>80%</td>
-<td>78%</td>
-<td>79%</td>
-<td><span class="badge bg-success">Selected</span></td>
+
+<td>{{ loop.index }}</td>
+
+<td>{{ r[0] }}</td>
+<td>{{ r[1] }}</td>
+
+<td>{{ r[2] }}%</td>
+<td>{{ r[3] }}%</td>
+
+<td>{{ ((r[2] + r[3]) / 2)|round(1) }}%</td>
+
+<td>
+{% if r[4] == "Selected" %}
+<span class="badge bg-success">Selected</span>
+{% else %}
+<span class="badge bg-danger">Rejected</span>
+{% endif %}
+</td>
+
 </tr>
 
+{% endfor %}
+
+{% else %}
+
 <tr>
-<td>3</td>
-<td>John</td>
-<td>john@gmail.com</td>
-<td>60%</td>
-<td>65%</td>
-<td>62%</td>
-<td><span class="badge bg-danger">Rejected</span></td>
+<td colspan="7" class="text-center">No final results available</td>
 </tr>
+
+{% endif %}
 
 </tbody>
 

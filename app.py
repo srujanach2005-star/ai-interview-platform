@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, session
 from flask_jwt_extended import JWTManager
 from auth import register_user, login_user
 from database import init_db
+from flask import session
 import sqlite3
 import random
 import subprocess
@@ -14,6 +15,7 @@ from flask import redirect
 app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
+app.secret_key = "secretkey"   # needed for session
 jwt = JWTManager(app)
 
 init_db()
@@ -104,23 +106,18 @@ def admin_dashboard():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    # total candidates
     cur.execute("SELECT COUNT(*) FROM users WHERE role='candidate'")
     total_candidates = cur.fetchone()[0]
 
-    # coding tests attempted
     cur.execute("SELECT COUNT(*) FROM submissions")
     coding_tests = cur.fetchone()[0]
 
-    # ai interviews attended
     cur.execute("SELECT COUNT(*) FROM interviews")
     ai_interviews = cur.fetchone()[0]
 
-    # selected candidates
     cur.execute("SELECT COUNT(*) FROM interviews WHERE status='Selected'")
     selected_candidates = cur.fetchone()[0]
 
-    # recent candidates
     cur.execute("""
     SELECT 
         users.name,
@@ -149,6 +146,32 @@ def admin_dashboard():
     )
 
 
+# finally result
+@app.route("/final_results")
+def final_results():
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name,
+           users.email,
+           COALESCE(submissions.score,0),
+           COALESCE(interviews.score,0),
+           COALESCE(interviews.status,'Pending')
+    FROM users
+    LEFT JOIN submissions ON users.id = submissions.user_id
+    LEFT JOIN interviews ON users.id = interviews.candidate_id
+    WHERE users.role='candidate'
+    """)
+
+    results = cur.fetchall()
+
+    conn.close()
+
+    return render_template("final_results.html", results=results)
+
+
 # View Candidates
 @app.route("/admin_candidates")
 def admin_candidates():
@@ -165,6 +188,31 @@ def admin_candidates():
     return render_template("admin_candidates.html", candidates=candidates)
 
 
+# Add Candidate
+@app.route("/add_candidate", methods=["POST"])
+def add_candidate():
+
+    name = request.form.get("name")
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    import bcrypt
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
+        (name, email, hashed, "candidate")
+    )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Candidate created"})
+
+
 # Delete User
 @app.route("/delete_user/<int:user_id>")
 def delete_user(user_id):
@@ -176,24 +224,8 @@ def delete_user(user_id):
     conn.commit()
     conn.close()
 
-    return redirect("/admin_candidates")
+    return jsonify({"message": "User deleted"})
 
-# role updated
-@app.route("/update_role/<int:user_id>", methods=["POST"])
-def update_role(user_id):
-
-    data = request.json
-    role = data["role"]
-
-    conn = sqlite3.connect("database.db")
-    cur = conn.cursor()
-
-    cur.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Role Updated Successfully"})
 
 # Coding Judge Admin Page
 @app.route("/admin_coding_judge")
@@ -276,7 +308,21 @@ def delete_problem(problem_id):
 # Admin AI Interviews Page
 @app.route("/admin_ai_interviews")
 def admin_ai_interviews():
-    return render_template("admin_ai_interviews.html")
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name, users.email, interviews.score, interviews.feedback, interviews.recording
+    FROM interviews
+    JOIN users ON interviews.candidate_id = users.id
+    """)
+
+    interviews = cur.fetchall()
+
+    conn.close()
+
+    return render_template("admin_ai_interviews.html", interviews=interviews)
 
 
 # Admin Results Page
@@ -286,11 +332,190 @@ def admin_results():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM interviews")
+    cur.execute("""
+    SELECT users.id,
+           users.name,
+           users.email,
+           COALESCE(submissions.score,0),
+           COALESCE(interviews.score,0),
+           COALESCE(interviews.status,'Pending')
+    FROM users
+    LEFT JOIN submissions ON users.id=submissions.user_id
+    LEFT JOIN interviews ON users.id=interviews.candidate_id
+    WHERE users.role='candidate'
+    """)
+
     results = cur.fetchall()
 
     conn.close()
     return render_template("admin_results.html", results=results)
+
+
+# ===============================
+# PROFILE PAGE
+# ===============================
+@app.route("/profile")
+def profile():
+
+    email = session.get("email")   # get logged-in candidate email
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.id,
+           users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills,
+           profiles.photo
+    FROM users
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
+    WHERE users.email = ?
+    """,(email,))
+
+    data = cur.fetchone()
+
+    conn.close()
+
+    profile = None
+
+    if data:
+        profile = {
+            "user_id": data[0],
+            "name": data[1],
+            "email": data[2],
+            "phone": data[3],
+            "college": data[4],
+            "skills": data[5],
+            "photo": data[6]
+        }
+
+    return render_template("profile.html", profile=profile)
+# ===============================
+# PROFILE SUMMARY PAGE
+# ===============================
+@app.route("/profile_summary")
+def profile_summary():
+
+    user_id = request.args.get("user_id")
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills
+    FROM users
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
+    WHERE users.id = ?
+    """,(user_id,))
+
+    user = cur.fetchone()
+
+    conn.close()
+
+    return render_template("profile_summary.html", user=user)
+
+
+# ===============================
+# SAVE PROFILE
+# ===============================
+@app.route("/save_profile", methods=["POST"])
+def save_profile():
+
+    phone = request.form.get("phone")
+    college = request.form.get("college")
+    skills = request.form.get("skills")
+    name = request.form.get("name")
+
+    user_id = request.form.get("user_id")
+
+    # ✅ if user_id missing, redirect back to profile
+    if not user_id:
+        return redirect("/profile")
+
+    user_id = int(user_id)
+
+    photo = request.files.get("photo")
+    resume = request.files.get("resume")
+
+    photo_filename = None
+    resume_filename = None
+
+    if photo and photo.filename != "":
+        photo_filename = photo.filename
+        photo.save("static/uploads/" + photo_filename)
+
+    if resume and resume.filename != "":
+        resume_filename = resume.filename
+        resume.save("static/resumes/" + resume_filename)
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    # update name in users table
+    cur.execute("UPDATE users SET name=? WHERE id=?", (name, user_id))
+
+    cur.execute("SELECT photo,resume FROM profiles WHERE user_id=?", (user_id,))
+    existing = cur.fetchone()
+
+    if existing:
+
+        if not photo_filename:
+            photo_filename = existing[0]
+
+        if not resume_filename:
+            resume_filename = existing[1]
+
+        cur.execute("""
+        UPDATE profiles
+        SET phone=?, college=?, skills=?, photo=?, resume=?
+        WHERE user_id=?
+        """,(phone,college,skills,photo_filename,resume_filename,user_id))
+
+    else:
+
+        cur.execute("""
+        INSERT INTO profiles(user_id,phone,college,skills,photo,resume)
+        VALUES(?,?,?,?,?,?)
+        """,(user_id,phone,college,skills,photo_filename,resume_filename))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/profile_summary?user_id=" + str(user_id))
+
+# View profile (admin)
+@app.route("/view_profile/<int:user_id>")
+def view_profile(user_id):
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills
+    FROM users
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
+    WHERE users.id=?
+    """,(user_id,))
+
+    profile = cur.fetchone()
+
+    conn.close()
+
+    return render_template("admin_view_profile.html", profile=profile)
 
 
 
