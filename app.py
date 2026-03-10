@@ -1,12 +1,14 @@
-from flask import Flask, request, jsonify, render_template, redirect
+from flask import Flask, request, jsonify, render_template, redirect, session
 from flask_jwt_extended import JWTManager
 from auth import register_user, login_user
 from database import init_db
+from flask import session
 import sqlite3
 
 app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
+app.secret_key = "secretkey"   # needed for session
 jwt = JWTManager(app)
 
 init_db()
@@ -282,23 +284,97 @@ def admin_results():
     return render_template("admin_results.html", results=results)
 
 
-# Profile page
+# ===============================
+# PROFILE PAGE
+# ===============================
 @app.route("/profile")
 def profile():
-    return render_template("profile.html")
+
+    email = session.get("email")   # get logged-in candidate email
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.id,
+           users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills,
+           profiles.photo
+    FROM users
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
+    WHERE users.email = ?
+    """,(email,))
+
+    data = cur.fetchone()
+
+    conn.close()
+
+    profile = None
+
+    if data:
+        profile = {
+            "user_id": data[0],
+            "name": data[1],
+            "email": data[2],
+            "phone": data[3],
+            "college": data[4],
+            "skills": data[5],
+            "photo": data[6]
+        }
+
+    return render_template("profile.html", profile=profile)
+# ===============================
+# PROFILE SUMMARY PAGE
+# ===============================
+@app.route("/profile_summary")
+def profile_summary():
+
+    user_id = request.args.get("user_id")
+
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills
+    FROM users
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
+    WHERE users.id = ?
+    """,(user_id,))
+
+    user = cur.fetchone()
+
+    conn.close()
+
+    return render_template("profile_summary.html", user=user)
 
 
-# Save profile
+# ===============================
+# SAVE PROFILE
+# ===============================
 @app.route("/save_profile", methods=["POST"])
 def save_profile():
 
-    name = request.form.get("name")
-    email = request.form.get("email")
     phone = request.form.get("phone")
     college = request.form.get("college")
     skills = request.form.get("skills")
+    name = request.form.get("name")
 
     user_id = request.form.get("user_id")
+
+    # ✅ if user_id missing, redirect back to profile
+    if not user_id:
+        return redirect("/profile")
+
+    user_id = int(user_id)
 
     photo = request.files.get("photo")
     resume = request.files.get("resume")
@@ -317,15 +393,37 @@ def save_profile():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
-    cur.execute("""
-    INSERT INTO profiles(user_id,name,email,phone,college,skills,photo,resume)
-    VALUES(?,?,?,?,?,?,?,?)
-    """,(user_id,name,email,phone,college,skills,photo_filename,resume_filename))
+    # update name in users table
+    cur.execute("UPDATE users SET name=? WHERE id=?", (name, user_id))
+
+    cur.execute("SELECT photo,resume FROM profiles WHERE user_id=?", (user_id,))
+    existing = cur.fetchone()
+
+    if existing:
+
+        if not photo_filename:
+            photo_filename = existing[0]
+
+        if not resume_filename:
+            resume_filename = existing[1]
+
+        cur.execute("""
+        UPDATE profiles
+        SET phone=?, college=?, skills=?, photo=?, resume=?
+        WHERE user_id=?
+        """,(phone,college,skills,photo_filename,resume_filename,user_id))
+
+    else:
+
+        cur.execute("""
+        INSERT INTO profiles(user_id,phone,college,skills,photo,resume)
+        VALUES(?,?,?,?,?,?)
+        """,(user_id,phone,college,skills,photo_filename,resume_filename))
 
     conn.commit()
     conn.close()
 
-    return redirect("/profile")
+    return redirect("/profile_summary?user_id=" + str(user_id))
 
 # View profile (admin)
 @app.route("/view_profile/<int:user_id>")
@@ -335,9 +433,14 @@ def view_profile(user_id):
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT users.name, users.email, profiles.phone, profiles.college, profiles.skills
+    SELECT users.name,
+           users.email,
+           profiles.phone,
+           profiles.college,
+           profiles.skills
     FROM users
-    JOIN profiles ON users.id = profiles.user_id
+    LEFT JOIN profiles
+    ON users.id = profiles.user_id
     WHERE users.id=?
     """,(user_id,))
 

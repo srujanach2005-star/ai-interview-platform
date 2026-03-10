@@ -137,7 +137,6 @@ width:100%;
 <a href="/admin_results">📈 Coding Results</a>
 
 <a href="/admin_ai_interviews">🤖 AI Interviews</a>
-<a href="/view_profile/{{c[0]}}" class="btn btn-info btn-sm">View Profile</a>
 
 </div>
 
@@ -203,11 +202,17 @@ width:100%;
 <td><span class="badge bg-success">Active</span></td>
 
 <td>
+
+<a href="/view_profile/{{c[0]}}" class="btn btn-info btn-sm">
+View Profile
+</a>
+
 <a href="/delete_user/{{c[0]}}" 
 class="btn btn-danger btn-sm"
 onclick="return confirm('Delete this candidate?')">
 Delete
 </a>
+
 </td>
 
 </tr>

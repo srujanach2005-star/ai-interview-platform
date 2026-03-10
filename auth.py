@@ -1,6 +1,6 @@
 import sqlite3
 import bcrypt
-from flask import jsonify
+from flask import jsonify, session
 from flask_jwt_extended import create_access_token
 
 
@@ -54,7 +54,17 @@ def login_user(data):
         hashed = hashed.encode()
 
     if bcrypt.checkpw(password.encode(), hashed):
+
+        # ✅ ADDED (store login user in session)
+        session["email"] = email
+        session["user_id"] = user_id
+
         token = create_access_token(identity={"id": user_id, "role": role})
-        return jsonify({"msg": "Login success", "token": token, "role": role})
+
+        return jsonify({
+            "msg": "Login success",
+            "token": token,
+            "role": role
+        })
 
     return jsonify({"error": "Invalid password"}), 401
